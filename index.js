@@ -22,8 +22,17 @@ async function run() {
   try {
     await client.connect();
     const userCollection = client.db('developManufacture').collection('user');
+    const productCollection = client.db('developManufacture').collection('product');
   
 
+
+      //   show display service
+      app.get('/product', async (req, res) => {
+        const query = {};
+        const cursor = productCollection.find(query);
+        const result = await cursor.toArray()
+        res.send(result);
+    })
 
 //  users login and signIn go to signIn send user to db with put
 app.put('/user/:email', async (req, res) => {
