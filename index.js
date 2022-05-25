@@ -23,6 +23,7 @@ async function run() {
     await client.connect();
     const userCollection = client.db('developManufacture').collection('user');
     const productCollection = client.db('developManufacture').collection('product');
+    const orderCollection = client.db('developManufacture').collection('order');
   
 
 
@@ -32,6 +33,30 @@ async function run() {
         const cursor = productCollection.find(query);
         const result = await cursor.toArray()
         res.send(result);
+    })
+
+      // find single service
+      app.get('/product/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = {
+            _id: ObjectId(id)
+        }
+        const service = await productCollection.findOne(query);
+        res.send(service);
+    })
+
+
+    // create Order 
+    app.post('/order', async (req, res) => {
+      const order = req.body;
+      const query = { productName: order.productName, price: order.price, user: order.user, address:order.address, phone: order.phone, minimumQuantity: order.minimumQuantity }
+      const exists = await orderCollection.findOne(query);
+      if (exists) {
+        return res.send({ success: false, booking: exists })
+      }
+      const result = await orderCollection.insertOne(order);
+
+      return res.send({ success: true, result });
     })
 
 //  users login and signIn go to signIn send user to db with put
