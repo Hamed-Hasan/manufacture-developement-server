@@ -3,7 +3,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -39,7 +39,43 @@ async function run() {
     const productCollection = client.db('developManufacture').collection('product');
     const orderCollection = client.db('developManufacture').collection('order');
     const reviewCollection = client.db('developManufacture').collection('review');
-  
+    const paymentCollection = client.db('doctors_portal').collection('payments');
+
+
+// create payment method for stripe 
+app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
+  const service = req.body;
+  const price = service.price;
+  const amount = price*100;
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount : amount,
+    currency: 'usd',
+    payment_method_types:['card']
+  });
+  res.send({clientSecret: paymentIntent.client_secret})
+});
+
+
+    // update booking for stripe
+    app.patch('/order/:id', verifyJWT, async(req, res) =>{
+      const id  = req.params.id;
+      const payment = req.body;
+      const filter = {_id: ObjectId(id)};
+      const updatedDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId
+        }
+      }
+
+      const result = await paymentCollection.insertOne(payment);
+      const updatedBooking = await orderCollection.updateOne(filter, updatedDoc);
+      // sendPaymentConfirmationEmail(payment)
+      res.send({updatedBooking: updatedBooking, result: result});
+    })
+
+
+
 
 
       //   show display service
@@ -94,6 +130,14 @@ async function run() {
       else {
         return res.status(403).send({ message: 'forbidden access' });
       }
+    })
+
+     // order verifyJWT & single order show
+     app.get('/order/:id', verifyJWT, async(req, res) =>{
+      const id = req.params.id;
+      const query = {_id: ObjectId(id)};
+      const booking = await orderCollection.findOne(query);
+      res.send(booking);
     })
 
    // delete doctor
