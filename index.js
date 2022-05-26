@@ -86,6 +86,13 @@ app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
         res.send(result);
     })
 
+    // add new user in home page 
+    app.post('/addNewOrder', async (req, res) => {
+      const newService = req.body;
+      const result = await productCollection.insertOne(newService);
+      res.send(result);
+  })
+
       // find single service
       app.get('/product/:id', async (req, res) => {
         const id = req.params.id;
