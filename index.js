@@ -15,7 +15,21 @@ const uri = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-sh
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-
+// verifyJWT
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: 'UnAuthorized access' });
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: 'Forbidden access' })
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
 
 
 async function run() {
@@ -48,16 +62,29 @@ async function run() {
 
     // create Order 
     app.post('/order', async (req, res) => {
-      const order = req.body;
-      const query = { productName: order.productName, price: order.price, user: order.user, address:order.address, phone: order.phone, minimumQuantity: order.minimumQuantity }
-      const exists = await orderCollection.findOne(query);
-      if (exists) {
-        return res.send({ success: false, booking: exists })
-      }
+      const order = req.body
       const result = await orderCollection.insertOne(order);
+      res.send({ success: true, result });
+  })
 
-      return res.send({ success: true, result });
+
+
+     // verify all booking user & all booking user
+     app.get('/booking', verifyJWT, async (req, res) => {
+      const patient = req.query.patient;
+      console.log(patient)
+      const decodedEmail = req.decoded.email;
+      if (patient === decodedEmail) {
+        const query = { patient: patient };
+        const bookings = await orderCollection.find(query).toArray();
+        return res.send(bookings);
+      }
+      else {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
     })
+
+  
 
 //  users login and signIn go to signIn send user to db with put
 app.put('/user/:email', async (req, res) => {
@@ -74,14 +101,6 @@ app.put('/user/:email', async (req, res) => {
   res.send({ result, token });
 
 })
-
-
-   
-
-
-
-
-
 
 
   }
