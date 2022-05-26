@@ -38,6 +38,7 @@ async function run() {
     const userCollection = client.db('developManufacture').collection('user');
     const productCollection = client.db('developManufacture').collection('product');
     const orderCollection = client.db('developManufacture').collection('order');
+    const reviewCollection = client.db('developManufacture').collection('review');
   
 
 
@@ -67,15 +68,20 @@ async function run() {
       res.send({ success: true, result });
   })
 
-
+    // add review 
+    app.post('/addReview', verifyJWT, async (req, res) => {
+      const body = req.body;
+      const result = await reviewCollection.insertOne(body)
+      res.send(result);
+    })
 
      // verify all booking user & all booking user
-     app.get('/booking', verifyJWT, async (req, res) => {
-      const patient = req.query.patient;
-      console.log(patient)
+     app.get('/order', verifyJWT, async (req, res) => {
+      const user = req.query.user;
+      console.log(user)
       const decodedEmail = req.decoded.email;
-      if (patient === decodedEmail) {
-        const query = { patient: patient };
+      if (user === decodedEmail) {
+        const query = { user: user };
         const bookings = await orderCollection.find(query).toArray();
         return res.send(bookings);
       }
