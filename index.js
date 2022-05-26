@@ -75,6 +75,12 @@ async function run() {
       res.send(result);
     })
 
+ // show all reviews 
+ app.get('/review',verifyJWT, async (req, res) => {
+  const result = await reviewCollection.find().toArray();
+  res.send(result)
+})
+
      // verify all booking user & all booking user
      app.get('/order', verifyJWT, async (req, res) => {
       const user = req.query.user;
@@ -90,7 +96,13 @@ async function run() {
       }
     })
 
-  
+   // delete doctor
+   app.delete('/order/:user',verifyJWT, async (req, res) => {
+    const email = req.params.email;
+    const filter = { email: email };
+    const result = await orderCollection.deleteOne(filter)
+    res.send(result)
+  })
 
 //  users login and signIn go to signIn send user to db with put
 app.put('/user/:email', async (req, res) => {
