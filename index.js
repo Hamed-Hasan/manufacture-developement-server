@@ -41,7 +41,6 @@ async function run() {
     const reviewCollection = client.db('developManufacture').collection('review');
     const paymentCollection = client.db('developManufacture').collection('payments');
 
-
 // create payment method for stripe 
 app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
   const service = req.body;
@@ -111,18 +110,22 @@ app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
       res.send({ success: true, result });
   })
 
-    // add review 
-    app.post('/addReview', verifyJWT, async (req, res) => {
-      const body = req.body;
-      const result = await reviewCollection.insertOne(body)
-      res.send(result);
-    })
+  // add single item to database for review
+  app.post("/add-review", async (req, res) => {
+    const newItem = req.body;
+    console.log(newItem);
+    res.send({ result: "data received!" });
+    const result = await reviewCollection.insertOne(newItem);
+    console.log("review Inserted. ID: ", result.insertedId);
+  });
 
- // show all reviews 
- app.get('/review',verifyJWT, async (req, res) => {
-  const result = await reviewCollection.find().toArray();
-  res.send(result)
-})
+// load all item from database for review
+app.get("/reviews", async (req, res) => {
+  const query = {};
+  const cursor = reviewCollection.find(query);
+  const allProduct = await cursor.toArray();
+  res.send(allProduct);
+});
 
      // verify all booking user & all booking user
      app.get('/order', verifyJWT, async (req, res) => {
@@ -154,6 +157,35 @@ app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
     const result = await orderCollection.deleteOne(filter)
     res.send(result)
   })
+
+
+   // load single user using email
+   app.get("/userInfo/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = { email };
+    const product = await userCollection.findOne(query);
+    res.send(product);
+  });
+
+  // update a user
+  app.put("/newUser/:email", async (req, res) => {
+    const email = req.params.email;
+    const user = req.body;
+    const filter = { email };
+    const options = { upsert: true };
+    console.log(user);
+    const updatedDoc = {
+      $set: {
+        ...user,
+      },
+    };
+    const result = await userCollection.updateOne(
+      filter,
+      updatedDoc,
+      options
+    );
+    res.send(result);
+  });
 
 //  users login and signIn go to signIn send user to db with put
 app.put('/user/:email', async (req, res) => {
