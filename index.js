@@ -39,7 +39,7 @@ async function run() {
     const productCollection = client.db('developManufacture').collection('product');
     const orderCollection = client.db('developManufacture').collection('order');
     const reviewCollection = client.db('developManufacture').collection('review');
-    const paymentCollection = client.db('doctors_portal').collection('payments');
+    const paymentCollection = client.db('developManufacture').collection('payments');
 
 
 // create payment method for stripe 
@@ -170,7 +170,15 @@ app.put('/user/:email', async (req, res) => {
   res.send({ result, token });
 
 })
-
+        // delete from manage item
+        app.delete('/manage/:id', async (req, res) => {
+          const id = req.params.id;
+          const query = {
+              _id: ObjectId(id)
+          }
+          const result = await productCollection.deleteOne(query);
+          res.send(result);
+      })
 
   }
   finally {
