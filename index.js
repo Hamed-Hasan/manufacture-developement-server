@@ -159,6 +159,15 @@ app.get("/reviews", async (req, res) => {
   })
 
 
+     // load all users from database
+     app.get("/users", async (req, res) => {
+      const query = {};
+      const cursor = userCollection.find(query);
+      const allUsers = await cursor.toArray();
+      res.send(allUsers);
+    });
+
+
    // load single user using email
    app.get("/userInfo/:email", async (req, res) => {
     const email = req.params.email;
