@@ -109,7 +109,7 @@ async function run() {
     }
 
 // create payment method for stripe 
-app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
+app.post('/create-payment-intent', async(req, res) =>{
   const service = req.body;
   const price = service.price;
   const amount = price*100;
@@ -123,7 +123,7 @@ app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
 
 
     // update booking for stripe
-    app.patch('/order/:id', verifyJWT, async(req, res) =>{
+    app.patch('/order/:id', async(req, res) =>{
       const id  = req.params.id;
       const payment = req.body;
       const filter = {_id: ObjectId(id)};
