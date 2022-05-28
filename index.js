@@ -3,7 +3,12 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+var nodemailer = require('nodemailer');
+var sgTransport = require('nodemailer-sendgrid-transport');
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -32,6 +37,56 @@ function verifyJWT(req, res, next) {
 }
 
 
+
+
+
+const emailSenderOptions = {
+  auth: {
+    api_key: process.env.EMAIL_SENDER_KEY
+  }
+}
+
+const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+
+function sendOrderEmail(order){
+  const { productName,  user,  userName,  phone,  price} = order;
+
+  var email = {
+    from: process.env.EMAIL_SENDER,
+    to: productName,
+    subject: `Your Order for ${userName} is on ${phone} at ${price} is Confirmed`,
+    text: `Your Order for ${user} is on ${phone} at ${price} is Confirmed`,
+    html: `
+      <div>
+        <p> Hello ${userName}, </p>
+        <h3>Your Order for ${userName} is confirmed</h3>
+        <p>Looking forward to seeing you on ${phone} at ${price}.</p>
+        
+        <h3>Our Address</h3>
+        <p>From Manufacturing Develop Ltd.</p>
+        <p>Bangladesh</p>
+        <a href="https://www.google.com/">unsubscribe</a>
+      </div>
+    `
+  };
+
+  emailClient.sendMail(email, function(err, info){
+    if (err ){
+      console.log(err);
+    }
+    else {
+      console.log('Message sent: ', info);
+    }
+});
+
+}
+
+
+
+
+
+
+
 async function run() {
   try {
     await client.connect();
@@ -40,6 +95,18 @@ async function run() {
     const orderCollection = client.db('developManufacture').collection('order');
     const reviewCollection = client.db('developManufacture').collection('review');
     const paymentCollection = client.db('developManufacture').collection('payments');
+
+    // verifyAdmin
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      if (requesterAccount.isAdmin === true) {
+        next();
+      }
+      else {
+        res.status(403).send({ message: 'forbidden' });
+      }
+    }
 
 // create payment method for stripe 
 app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
@@ -110,8 +177,16 @@ app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
       res.send({ success: true, result });
   })
 
+  //   app.post('/order', async (req, res) => {
+  //     const order = req.body;
+  //     const query = { productName: order.productName, price: order.price, user: order.user, userName: order.userName, orderQuantity: order.orderQuantity, phone: order.phone, address: order.address}
+  //     const result = await orderCollection.insertOne(query);
+  //     sendOrderEmail(order)
+  //     res.send({ success: true, result });
+  // })
+
   // add single item to database for review
-  app.post("/add-review", async (req, res) => {
+  app.post("/add-review",verifyJWT,verifyAdmin, async (req, res) => {
     const newItem = req.body;
     console.log(newItem);
     res.send({ result: "data received!" });
@@ -143,7 +218,7 @@ app.get("/reviews", async (req, res) => {
     })
 
      // order verifyJWT & single order show
-     app.get('/order/:id', verifyJWT, async(req, res) =>{
+     app.get('/order/:id', verifyJWT,verifyAdmin, async(req, res) =>{
       const id = req.params.id;
       const query = {_id: ObjectId(id)};
       const booking = await orderCollection.findOne(query);
