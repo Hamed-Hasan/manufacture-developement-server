@@ -188,7 +188,7 @@ app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
   // add single item to database for review
   app.post("/add-review",verifyJWT,verifyAdmin, async (req, res) => {
     const newItem = req.body;
-    console.log(newItem);
+    
     res.send({ result: "data received!" });
     const result = await reviewCollection.insertOne(newItem);
     console.log("review Inserted. ID: ", result.insertedId);
@@ -205,7 +205,7 @@ app.get("/reviews", async (req, res) => {
      // verify all booking user & all booking user
      app.get('/order', verifyJWT, async (req, res) => {
       const user = req.query.user;
-      console.log(user)
+ 
       const decodedEmail = req.decoded.email;
       if (user === decodedEmail) {
         const query = { user: user };
@@ -257,7 +257,7 @@ app.get("/reviews", async (req, res) => {
     const user = req.body;
     const filter = { email };
     const options = { upsert: true };
-    console.log(user);
+   
     const updatedDoc = {
       $set: {
         ...user,
