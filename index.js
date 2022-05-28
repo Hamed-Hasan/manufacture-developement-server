@@ -109,7 +109,7 @@ async function run() {
     }
 
 // create payment method for stripe 
-app.post('/create-payment-intent', async(req, res) =>{
+app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
   const service = req.body;
   const price = service.price;
   const amount = price*100;
