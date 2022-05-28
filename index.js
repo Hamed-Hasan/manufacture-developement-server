@@ -218,7 +218,7 @@ app.get("/reviews", async (req, res) => {
     })
 
      // order verifyJWT & single order show
-     app.get('/order/:id', verifyJWT,verifyAdmin, async(req, res) =>{
+     app.get('/order/:id', verifyJWT, async(req, res) =>{
       const id = req.params.id;
       const query = {_id: ObjectId(id)};
       const booking = await orderCollection.findOne(query);
